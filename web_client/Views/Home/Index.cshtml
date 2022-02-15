@@ -1,0 +1,114 @@
+﻿@model IEnumerable<Ga.Models.user>
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+
+<div class="col-md-12">
+    <div class="panel panel-primary">
+        <div class="panel-heading">
+            <h3 class="panel-title">Tạo vé mới</h3>
+        </div>
+        <form id="profile" method="post" asp-controller="User" asp-action="Save">
+            <div class="panel-body">
+                <div class="form-group col-md-5">
+                    <label>ID</label>
+                    <input type="text" name="ID" id="userId" class="form-control" placeholder="Enter ID" required="" />
+                </div>
+                <div class="form-group col-md-5">
+                    <label>Money</label>
+                    <input type="text" name="Money" id="Money" class="form-control" placeholder="Enter Money" required="" />
+                </div>
+                <div class="form-group col-md-5">
+                    <label>Age</label>
+                    <input type="text" name="Age" id="Age" class="form-control" placeholder="Enter Age" required="" />
+                </div>
+                <div class="form-group col-md-5">
+                    <label>Start</label>
+                    <input type="text" name="Start" id="Start" class="form-control" placeholder="Enter Start" required="" />
+                </div>
+                <div class="form-group col-md-5">
+                    <label>End</label>
+                    <input type="text" name="End" id="End" class="form-control" placeholder="Enter End" required="" />
+                </div>
+                <div class="form-group col-md-1">
+                    <div style="float: right; display:inline-block;">
+                        <input class="btn btn-primary" name="submitButton" id="btnSave" value="Save" type="submit">
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div><hr />
+    <form id="List" method="post" asp-controller="User" asp-action="GetData">
+        <table id="tblStudent" class="table table-bordered table-striped table-responsive table-hover">
+            <thead>
+                <tr>
+                    <th align="left" class="productth">ID</th>
+                    <th align="left" class="productth">Money</th>
+                    <th align="left" class="productth">Age</th>
+                    <th align="left" class="productth">Start</th>
+                    <th align="left" class="productth">End</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Id</td>
+                        <td>@item.Money</td>
+                        <td>@item.Age</td>
+                        <td>@item.Start</td>
+                        <td>@item.End</td>
+                    </tr>
+                }
+                <tr><td colspan="5"><strong>Tổng số: @Model.Count()</strong></td></tr>
+    </form>
+</div>
+<div>
+    <label>Hệ thống có 4 ga tương ứng với các giá trị từ 1 tới 4, giá trị 0 tương ứng với việc khách hàng không tham gia di chuyển</label>
+</div>
+<div id="demo"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" charset="utf-8"></script>
+<script type="text/javascript" language="javascript">
+     $(document).ready(function () {
+        //setTimeout(function(){window.location.reload(1);}, 1000);
+        sub_mqtt_msg();
+     })
+     function sub_mqtt_msg() {
+            
+            var mqtt_server = "broker.hivemq.com";
+            var mqtt_port = 8000;
+
+            client = new Paho.MQTT.Client(mqtt_server, mqtt_port, "");
+            client.onMessageArrived = onMessageArrived;
+            client.onMessageArrived = onMessageArrived;
+            client.connect({ onSuccess: onConnect });
+        }
+     function onConnect() {
+            client.subscribe("Station");
+        }
+     function onMessageArrived(message){
+         //$('#demo').html(message.payloadString);
+         var name = 'ketqua';
+         var dataObject = {};
+         dataObject[name] = message.payloadString;
+         $.ajax("@Url.Action("SetData", "Home")",{
+             type: 'POST',  
+             data: dataObject, 
+             success: function (response){
+                 var data = JSON.parse(response);
+                 mqtt_server  = "broker.hivemq.com";
+                 mqtt_port = 8000;
+                 client = new Paho.MQTT.Client(mqtt_server,mqtt_port," ");
+                 client.connect({onSuccess: function(){
+                     mss = new Paho.MQTT.Message(data);
+                     mss.destinationName = "client" + data.slice(1);
+                     client.send(mss);
+                 }})
+                 }
+                 
+                })
+     }  
+</script>
